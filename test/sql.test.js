@@ -36,9 +36,13 @@ describe('sql connector', function() {
           },
         }, vip: {
           type: Boolean,
+          name: 'v_i_p',
           testdb: {
             column: 'VIP',
           },
+        }, primaryAddress: {
+          type: String,
+          name: 'primary_address',
         },
         address: String,
       },
@@ -53,6 +57,17 @@ describe('sql connector', function() {
   it('should map column name', function() {
     var column = connector.column('customer', 'name');
     expect(column).to.eql('NAME');
+  });
+
+  it('should map column name from name attribute', function() {
+    var column = connector.column('customer', 'primaryAddress');
+    expect(column).to.eql('primary_address');
+  });
+
+  it(`should not map column name from name attribute 
+    if db specific column name provided`, function() {
+    var column = connector.column('customer', 'vip');
+    expect(column).to.eql('VIP');
   });
 
   it('should find column metadata', function() {
@@ -262,7 +277,7 @@ describe('sql connector', function() {
 
   it('builds column names for SELECT', function() {
     var cols = connector.buildColumnNames('customer');
-    expect(cols).to.eql('`NAME`,`VIP`,`ADDRESS`');
+    expect(cols).to.eql('`NAME`,`VIP`,`primary_address`,`ADDRESS`');
   });
 
   it('builds column names with true fields filter for SELECT', function() {
@@ -271,7 +286,12 @@ describe('sql connector', function() {
   });
 
   it('builds column names with false fields filter for SELECT', function() {
-    var cols = connector.buildColumnNames('customer', {fields: {name: false}});
+    var cols = connector.buildColumnNames('customer', {
+      fields: {
+        name: false,
+        primaryAddress: false,
+      },
+    });
     expect(cols).to.eql('`VIP`,`ADDRESS`');
   });
 
@@ -300,7 +320,7 @@ describe('sql connector', function() {
     var sql = connector.buildSelect('customer',
       {order: 'name', limit: 5, where: {name: 'John'}});
     expect(sql.toJSON()).to.eql({
-      sql: 'SELECT `NAME`,`VIP`,`ADDRESS` FROM `CUSTOMER`' +
+      sql: 'SELECT `NAME`,`VIP`,`primary_address`,`ADDRESS` FROM `CUSTOMER`' +
       ' WHERE `NAME`=$1 ORDER BY `NAME` LIMIT 5',
       params: ['John'],
     });
